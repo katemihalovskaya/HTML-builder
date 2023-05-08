@@ -1,57 +1,63 @@
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 
-// Создаем папку project-dist, если она еще не существует
-if (!fs.existsSync('./06-build-page/project-dist')) {
-  fs.mkdirSync('./06-build-page/project-dist');
-}
+const distDir = './06-build-page/project-dist';
 
-// Загружаем содержимое файла template.html
-const template = fs.readFileSync('./06-build-page/template.html', 'utf8');
+async function buildPage() {
+  // Delete everything in the project-dist folder
+  await fs.rmdir(distDir, { recursive: true });
+  await fs.mkdir(distDir);
 
-// Создаем объект с путями к файлам компонентов
-const components = {
-  section: './06-build-page/components/articles.html',
-  header: './06-build-page/components/header.html',
-  footer: './06-build-page/components/footer.html',
-  // добавьте сюда пути к другим компонентам, если они есть
-};
+  // Load the contents of the template.html file
+  const template = await fs.readFile('./06-build-page/template.html', 'utf8');
 
-// Функция, которая заменяет все вхождения тегов в строке на содержимое соответствующих файлов
-function replaceTagsInString(str, tags) {
-  Object.keys(tags).forEach((tag) => {
-    const filePath = tags[tag];
-    const fileContent = fs.readFileSync(filePath, 'utf8');
-    str = str.split(`{{${tag}}}`).join(fileContent);
-  });
-  return str;
-}
+  // Define paths to component files
+  const components = {
+    section: './06-build-page/components/articles.html',
+    header: './06-build-page/components/header.html',
+    footer: './06-build-page/components/footer.html',
+    // add paths to other components if they exist
+  };
 
-// Заменяем все теги в шаблоне на содержимое соответствующих файлов
-const indexHTML = replaceTagsInString(template, components);
-
-// Сохраняем новый файл index.html в папке project-dist
-fs.writeFileSync(path.join('./06-build-page/project-dist', 'index.html'), indexHTML);
-
-// Собираем все стили из папки styles в один файл
-const styles = fs.readdirSync('./06-build-page/styles').filter((file) => path.extname(file) === '.css');
-const styleContent = styles.map((file) => fs.readFileSync(path.join('./06-build-page/styles', file), 'utf8')).join('\n');
-
-// Сохраняем новый файл style.css в папке project-dist
-fs.writeFileSync(path.join('./06-build-page/project-dist', 'style.css'), styleContent);
-
-// Копируем папку assets в project-dist
-const copyDir = (src, dest) => {
-  fs.mkdirSync(dest, { recursive: true });
-  const files = fs.readdirSync(src);
-  files.forEach((file) => {
-    const srcPath = path.join(src, file);
-    const destPath = path.join(dest, file);
-    if (fs.statSync(srcPath).isDirectory()) {
-      copyDir(srcPath, destPath);
-    } else {
-      fs.copyFileSync(srcPath, destPath);
+  // Function to replace all tag occurrences in a string with the content of the corresponding file
+  async function replaceTagsInString(str, tags) {
+    for (const tag of Object.keys(tags)) {
+      const filePath = tags[tag];
+      const fileContent = await fs.readFile(filePath, 'utf8');
+      str = str.split(`{{${tag}}}`).join(fileContent);
     }
-  });
-};
-copyDir('./06-build-page/assets', path.join('./06-build-page/project-dist', 'assets'));
+    return str;
+  }
+
+  // Replace all tags in the template with the contents of the corresponding files
+  const indexHTML = await replaceTagsInString(template, components);
+
+  // Save the new index.html file in the project-dist folder
+  await fs.writeFile(path.join(distDir, 'index.html'), indexHTML);
+
+  // Combine all styles from the styles folder into one file
+  const styles = (await fs.readdir('./06-build-page/styles'))
+    .filter((file) => path.extname(file) === '.css');
+  const styleContent = await Promise.all(styles.map((file) => fs.readFile(path.join('./06-build-page/styles', file), 'utf8')));
+
+  // Save the new style.css file in the project-dist folder
+  await fs.writeFile(path.join(distDir, 'style.css'), styleContent.join('\n'));
+
+  // Copy the assets folder to the project-dist folder
+  const copyDir = async (src, dest) => {
+    await fs.mkdir(dest, { recursive: true });
+    const files = await fs.readdir(src);
+    for (const file of files) {
+      const srcPath = path.join(src, file);
+      const destPath = path.join(dest, file);
+      if ((await fs.stat(srcPath)).isDirectory()) {
+        await copyDir(srcPath, destPath);
+      } else {
+        await fs.copyFile(srcPath, destPath);
+      }
+    }
+  };
+  await copyDir('./06-build-page/assets', path.join(distDir, 'assets'));
+}
+
+buildPage().catch(console.error);

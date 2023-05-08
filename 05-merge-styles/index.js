@@ -2,30 +2,46 @@ const fs = require('fs');
 const path = require('path');
 
 const stylesDir = './05-merge-styles/styles';
-
-const isFileCss = (filename) => {
-    const extname = path.extname(filename);
-    return extname === '.css';
-  };
-
 const bundleFile = './05-merge-styles/project-dist/bundle.css';
-const styles = [];
 
+// Функция проверки, является ли файл css
+const isCssFile = (filename) => {
+  const extname = path.extname(filename);
+  return extname === '.css';
+};
+
+// Чтение содержимого папки styles
 fs.readdir(stylesDir, (err, files) => {
-  if (err) throw err;
+  if (err) {
+    console.error(err);
+    return;
+  }
 
-  files.forEach((file) => {
-    if (isFileCss(file)) {
-      const filepath = path.join(stylesDir, file);
-      const content = fs.readFileSync(filepath, 'utf8');
-      styles.push(content);
-    }
-  });
+  const styles = [];
 
-  // запись стилей в файл bundle.css
-  fs.writeFileSync(bundleFile, '');
-  styles.forEach((style) => {
-    fs.appendFileSync(bundleFile, style);
+  // Фильтрация css-файлов
+  const cssFiles = files.filter((file) => isCssFile(file));
+
+  // Асинхронное чтение каждого файла и запись данных в массив стилей
+  cssFiles.forEach((file) => {
+    const filepath = path.join(stylesDir, file);
+    fs.readFile(filepath, 'utf8', (err, data) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      styles.push(data);
+
+      // Запись массива стилей в файл bundle.css
+      if (styles.length === cssFiles.length) {
+        fs.writeFile(bundleFile, styles.join('\n'), (err) => {
+          if (err) {
+            console.error(err);
+            return;
+          }
+          console.log(`Styles were successfully merged into ${bundleFile}`);
+        });
+      }
+    });
   });
 });
-

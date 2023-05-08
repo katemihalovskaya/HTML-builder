@@ -20,11 +20,10 @@ fs.readdir(folderPath, (err, files) => {
 
       if (stats.isFile()) {
         const fileSizeInBytes = stats.size;
-        const fileSizeInKB = Math.ceil(fileSizeInBytes / 1024);
         const extension = path.extname(file).substring(1);
         const fileName = path.basename(file, `.${extension}`);
 
-        console.log(`${fileName} - ${extension} - ${fileSizeInKB}kb`);
+        console.log(`${fileName} - ${extension} - ${fileSizeInBytes}bytes`);
       }
     });
   });

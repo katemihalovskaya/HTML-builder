@@ -20,7 +20,7 @@ console.log('Welcome! Enter text or type "exit" to quit.\n');
 
 // Handle user input
 rl.on('line', (input) => {
-  if (input.toLowerCase() === 'exit') {
+  if (input.toLowerCase().trim() === 'exit') {
     // Close the stream and exit the program if the user enters "exit"
     fileStream.end();
     console.log('Goodbye!');
