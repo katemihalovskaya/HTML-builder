@@ -13,10 +13,9 @@ async function buildPage() {
 
   // Define paths to component files
   const components = {
-    section: './06-build-page/components/articles.html',
+    articles: './06-build-page/components/articles.html',
     header: './06-build-page/components/header.html',
     footer: './06-build-page/components/footer.html',
-    // add paths to other components if they exist
   };
 
   // Function to replace all tag occurrences in a string with the content of the corresponding file
