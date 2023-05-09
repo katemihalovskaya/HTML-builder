@@ -12,12 +12,8 @@ async function buildPage() {
   const template = await fs.readFile('./06-build-page/template.html', 'utf8');
 
   // Define paths to component files
-  const components = {
-    articles: './06-build-page/components/articles.html',
-    header: './06-build-page/components/header.html',
-    footer: './06-build-page/components/footer.html',
-  };
-
+  const components = await getComponents();
+  
   // Function to replace all tag occurrences in a string with the content of the corresponding file
   async function replaceTagsInString(str, tags) {
     for (const tag of Object.keys(tags)) {
@@ -30,7 +26,7 @@ async function buildPage() {
 
   // Replace all tags in the template with the contents of the corresponding files
   const indexHTML = await replaceTagsInString(template, components);
-
+  
   // Save the new index.html file in the project-dist folder
   await fs.writeFile(path.join(distDir, 'index.html'), indexHTML);
 
@@ -60,3 +56,26 @@ async function buildPage() {
 }
 
 buildPage().catch(console.error);
+
+//create components object
+
+const folderPath = './06-build-page/components';
+
+async function getComponents() {
+  const files = await fs.readdir(folderPath);
+  const components = {};
+
+  for (const file of files) {
+    const filePath = path.join(folderPath, file);
+    const stats = await fs.stat(filePath);
+
+    if (stats.isFile()) {
+      const extension = path.extname(file).substring(1);
+      const fileName = path.basename(file, `.${extension}`);
+      components[fileName] = `./06-build-page/components/${fileName}.html`;
+    }
+    
+  }
+  
+  return components;
+}
