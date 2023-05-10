@@ -4,8 +4,12 @@ const path = require('path');
 const distDir = './06-build-page/project-dist';
 
 async function buildPage() {
-  // Delete everything in the project-dist folder
-  await fs.rmdir(distDir, { recursive: true });
+  try {
+    await fs.access(distDir)
+      // Delete everything in the project-dist folder
+      await fs.rmdir(distDir, { recursive: true });
+  } catch (err) {}
+  
   await fs.mkdir(distDir);
 
   // Load the contents of the template.html file
