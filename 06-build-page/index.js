@@ -7,9 +7,9 @@ async function buildPage() {
   try {
     await fs.access(distDir)
       // Delete everything in the project-dist folder
-      await fs.rmdir(distDir, { recursive: true });
+      await fs.rm(distDir, { recursive: true });
   } catch (err) {}
-  
+
   await fs.mkdir(distDir);
 
   // Load the contents of the template.html file
